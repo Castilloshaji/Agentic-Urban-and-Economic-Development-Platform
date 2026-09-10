@@ -1,0 +1,11 @@
+admin_id,indicator,value,year,unit,revision_status,source_date,source
+DEMO-D-01,gddp,8500.0,2011,INR crore,final,2026-09-04,synthetic
+DEMO-D-01,per_capita_income,95000,2011,INR,final,2026-09-04,synthetic
+DEMO-D-01,gddp,9180.5 Cr,2015,INR crore,final,04-09-2026,synthetic
+DEMO-D-01,gddp,11576.2,2019,INR crore,final,2026-09-04,synthetic
+DEMO-D-01,per_capita_income,113238,2019,INR,final,2026-09-04,synthetic
+DEMO-D-01,gddp,13500.0,2021,INR crore,provisional,2022-01-15,synthetic
+DEMO-D-01,gddp,13120.4,2021,INR crore,final,2023-06-30,synthetic
+DEMO-D-01,per_capita_income,127350,2021,INR,final,2026-09-04,synthetic
+DEMO-D-01,gddp,15476.0,2023,INR crore,provisional,2026-09-04,synthetic
+DEMO-D-01,per_capita_income,143260,2023,INR,provisional,2026-09-04,synthetic

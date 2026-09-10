@@ -1,0 +1,10 @@
+Demo Economic Review -- Excerpt (Synthetic)
+
+This is placeholder text standing in for a real Kerala Economic Review excerpt.
+It exists only so the RAG ingest pipeline (chunk, embed, index) can be tested
+end to end before real documents are ingested.
+
+In this synthetic dataset, Demo Taluk's gross district domestic product grows
+at roughly 6-8 percent a year between 2011 and 2023, led by services and light
+manufacturing. Demo Panchayat B is identified as an emerging commercial node
+following the opening of Demo Central Metro station.

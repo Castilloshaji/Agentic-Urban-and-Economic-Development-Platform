@@ -1,0 +1,4 @@
+legacy_ward_id,panchayat_id,population,data_year,revision_status,boundary_vintage,note,source
+DEMO-P-01-LW1,DEMO-P-01,14200,2011,final,pre-2025-delimitation,legacy 3-way ward split; does not match current DEMO-W-01a/DEMO-W-01b,synthetic
+DEMO-P-01-LW2,DEMO-P-01,13800,2011,final,pre-2025-delimitation,legacy 3-way ward split; does not match current DEMO-W-01a/DEMO-W-01b,synthetic
+DEMO-P-01-LW3,DEMO-P-01,14000,2011,final,pre-2025-delimitation,legacy 3-way ward split; does not match current DEMO-W-01a/DEMO-W-01b,synthetic

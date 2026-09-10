@@ -1,0 +1,4 @@
+stop_id,name,lat,lon,admin_id,route_id
+DEMO-BS-01,Demo Panchayat A Stop,9.95,76.23,DEMO-P-01,DEMO-BR-01
+DEMO-BS-02,Demo Panchayat C Stop,9.95,76.37,DEMO-P-03,DEMO-BR-02
+DEMO-BS-03,Demo Connector Stop,10.0,76.3,DEMO-P-02,DEMO-BR-01

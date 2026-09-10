@@ -1,0 +1,43 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "flood_zone_id": "DEMO-FZ-01",
+        "risk_level": "high",
+        "source": "ksdma_ncess_style",
+        "source_date": "2010-06-15",
+        "data_year": 2010,
+        "revision_status": "final"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              76.28,
+              9.95
+            ],
+            [
+              76.35,
+              9.95
+            ],
+            [
+              76.35,
+              10.02
+            ],
+            [
+              76.28,
+              10.02
+            ],
+            [
+              76.28,
+              9.95
+            ]
+          ]
+        ]
+      }
+    }
+  ]
+}

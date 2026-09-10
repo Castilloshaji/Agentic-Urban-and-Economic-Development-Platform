@@ -1,0 +1,47 @@
+{
+  "type": "FeatureCollection",
+  "crs": {
+    "type": "name",
+    "properties": {
+      "name": "urn:ogc:def:crs:EPSG::32643"
+    }
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "waterbody_id": "DEMO-WB-01",
+        "name": "Demo Lake",
+        "type": "lake",
+        "source": "synthetic_utm43n"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              639000,
+              1100500
+            ],
+            [
+              642500,
+              1100500
+            ],
+            [
+              642500,
+              1103800
+            ],
+            [
+              639000,
+              1103800
+            ],
+            [
+              639000,
+              1100500
+            ]
+          ]
+        ]
+      }
+    }
+  ]
+}

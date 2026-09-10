@@ -1,0 +1,30 @@
+# secrets
+.env
+
+# python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+
+# generated pipeline output
+data/raw/**/*
+data/processed/*
+data/derived/*
+!data/**/.gitkeep
+
+# upstream source data — not redistributed. Rebuild with:
+#   scripts/build_ernakulam_dataset.py (see PROJECT_GUIDE.md)
+data/sources/
+
+# datasets derived from the real sources
+data/ernakulam/
+data/bench/
+
+# presentations and status reports
+*.pptx
+PHASE1_REPORT.md
+
+# editor lock files
+.~lock.*#

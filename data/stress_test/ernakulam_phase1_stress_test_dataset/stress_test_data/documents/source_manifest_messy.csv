@@ -1,0 +1,6 @@
+dataset,url,status,checked_on
+Population & demographics,https://ernakulam.nic.in/en/census/,reachable,2026-09-04
+Economy (GDDP/NDDP),https://ecostat.kerala.gov.in/,reachable,2026-09-04
+"Economy (supplementary, OLD portal -- do not use)",https://kerala.data.gov.in/,unreachable_maintenance,2026-09-04
+"Economy (supplementary, CURRENT portal)",https://datahub.kerala.gov.in/,reachable,2026-09-04
+Bus GTFS (community),https://jungle-bus.github.io/KochiTransport/KochiTransport.zip,reachable_but_stale,2026-09-04

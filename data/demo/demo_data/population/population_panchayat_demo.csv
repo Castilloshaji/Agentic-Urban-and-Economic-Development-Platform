@@ -1,0 +1,4 @@
+admin_id,population,male_population,female_population,literacy_rate,households,data_year,revision_status,boundary_vintage,source
+DEMO-P-01,42000,20800,21200,96.5,10500,2011,final,pre-2025-delimitation,synthetic
+DEMO-P-02,38500,19000,19500,95.8,9600,2011,final,pre-2025-delimitation,synthetic
+DEMO-P-03,45200,22300,22900,97.1,11300,2011,final,pre-2025-delimitation,synthetic

@@ -1,0 +1,6 @@
+Demo Development Report -- Excerpt (Synthetic)
+
+Placeholder development-report text for pipeline testing. Flood mitigation
+works are recommended for the area where Demo Panchayat B and Demo Panchayat C
+overlap with flood hazard zone DEMO-FZ-01, prior to any new road or transit
+construction in that corridor.

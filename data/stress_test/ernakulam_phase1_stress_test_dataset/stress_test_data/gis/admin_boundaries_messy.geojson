@@ -1,0 +1,430 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "admin_id": "DEMO-D-01",
+        "level": "district",
+        "parent_id": null,
+        "name": "Demo District",
+        "source": "synthetic",
+        "source_date": "2026-09-04",
+        "data_year": 2026,
+        "revision_status": "final",
+        "boundary_vintage": "2025-delimitation"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              76.2,
+              9.9
+            ],
+            [
+              76.4,
+              9.9
+            ],
+            [
+              76.4,
+              10.1
+            ],
+            [
+              76.2,
+              10.1
+            ],
+            [
+              76.2,
+              9.9
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "admin_id": "DEMO-T-01",
+        "level": "taluk",
+        "parent_id": "DEMO-D-01",
+        "name": "Demo Taluk",
+        "source": "synthetic",
+        "source_date": "2026-09-04",
+        "data_year": 2026,
+        "revision_status": "final",
+        "boundary_vintage": "2025-delimitation"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              76.2,
+              9.9
+            ],
+            [
+              76.4,
+              9.9
+            ],
+            [
+              76.4,
+              10.1
+            ],
+            [
+              76.2,
+              10.1
+            ],
+            [
+              76.2,
+              9.9
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "admin_id": "DEMO-P-01",
+        "level": "panchayat",
+        "parent_id": "DEMO-T-01",
+        "name": "Demo Panchayat A",
+        "source": "synthetic",
+        "source_date": "2026-09-04",
+        "data_year": 2026,
+        "revision_status": "final",
+        "boundary_vintage": "2025-delimitation"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              76.2,
+              9.9
+            ],
+            [
+              76.2667,
+              9.9
+            ],
+            [
+              76.2667,
+              10.1
+            ],
+            [
+              76.2,
+              10.1
+            ],
+            [
+              76.2,
+              9.9
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "admin_id": "DEMO-P-02",
+        "level": "panchayat",
+        "parent_id": "DEMO-T-01",
+        "name": "  demo panchayat b  ",
+        "source": "synthetic",
+        "source_date": "2026-09-04",
+        "data_year": 2026,
+        "revision_status": "final",
+        "boundary_vintage": "2025-delimitation"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              76.2667,
+              9.9
+            ],
+            [
+              76.3333,
+              9.9
+            ],
+            [
+              76.3333,
+              10.1
+            ],
+            [
+              76.2667,
+              10.1
+            ],
+            [
+              76.2667,
+              9.9
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "admin_id": "DEMO-P-03",
+        "level": "panchayat",
+        "parent_id": "DEMO-T-01",
+        "name": "DEMO PANCHAYAT-C",
+        "source": "synthetic",
+        "source_date": "2026-09-04",
+        "data_year": 2026,
+        "revision_status": "final",
+        "boundary_vintage": "2025-delimitation"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              76.3333,
+              9.9
+            ],
+            [
+              76.4,
+              9.9
+            ],
+            [
+              76.4,
+              10.1
+            ],
+            [
+              76.3333,
+              10.1
+            ],
+            [
+              76.3333,
+              9.9
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "admin_id": "DEMO-W-01a",
+        "level": "ward",
+        "parent_id": "DEMO-P-01",
+        "name": "Demo Panchayat A Ward A",
+        "source": "synthetic",
+        "source_date": "2026-09-04",
+        "data_year": 2026,
+        "revision_status": "final",
+        "boundary_vintage": "2025-delimitation"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              76.2,
+              9.9
+            ],
+            [
+              76.2667,
+              9.9
+            ],
+            [
+              76.2667,
+              10.0
+            ],
+            [
+              76.2,
+              10.0
+            ],
+            [
+              76.2,
+              9.9
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "admin_id": "DEMO-W-01b",
+        "level": "ward",
+        "parent_id": "DEMO-P-01",
+        "name": "Demo Panchayat A Ward B",
+        "source": "synthetic",
+        "source_date": "2026-09-04",
+        "data_year": 2026,
+        "revision_status": "final",
+        "boundary_vintage": "2025-delimitation"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              76.2,
+              10.0
+            ],
+            [
+              76.2667,
+              10.0
+            ],
+            [
+              76.2667,
+              10.1
+            ],
+            [
+              76.2,
+              10.1
+            ],
+            [
+              76.2,
+              10.0
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "admin_id": "DEMO-W-02a",
+        "level": "ward",
+        "parent_id": "DEMO-P-02",
+        "name": "Demo Panchayat B Ward A",
+        "source": "synthetic",
+        "source_date": "2026-09-04",
+        "data_year": 2026,
+        "revision_status": "final",
+        "boundary_vintage": "2025-delimitation"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              76.2667,
+              9.9
+            ],
+            [
+              76.3333,
+              9.9
+            ],
+            [
+              76.3333,
+              10.0
+            ],
+            [
+              76.2667,
+              10.0
+            ],
+            [
+              76.2667,
+              9.9
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "admin_id": "DEMO-W-02b",
+        "level": "ward",
+        "parent_id": "DEMO-P-02",
+        "name": "Demo Panchayat B Ward B",
+        "source": "synthetic",
+        "source_date": "2026-09-04",
+        "data_year": 2026,
+        "revision_status": "final",
+        "boundary_vintage": "2025-delimitation"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              76.2667,
+              10.0
+            ],
+            [
+              76.3333,
+              10.1
+            ],
+            [
+              76.2667,
+              10.1
+            ],
+            [
+              76.3333,
+              10.0
+            ],
+            [
+              76.2667,
+              10.0
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "admin_id": "DEMO-W-03a",
+        "level": "ward",
+        "parent_id": "DEMO-P-03",
+        "name": "Demo Panchayat C Ward A",
+        "source": "synthetic",
+        "source_date": "2026-09-04",
+        "data_year": 2026,
+        "revision_status": "final",
+        "boundary_vintage": "2025-delimitation"
+      },
+      "geometry": null
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "admin_id": "DEMO-W-03b",
+        "level": "ward",
+        "parent_id": "DEMO-P-99",
+        "name": "Demo Panchayat C Ward B",
+        "source": "synthetic",
+        "source_date": "2026-09-04",
+        "data_year": 2026,
+        "revision_status": "final",
+        "boundary_vintage": "2025-delimitation"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              76.3333,
+              10.0
+            ],
+            [
+              76.4,
+              10.0
+            ],
+            [
+              76.4,
+              10.1
+            ],
+            [
+              76.3333,
+              10.1
+            ],
+            [
+              76.3333,
+              10.0
+            ]
+          ]
+        ]
+      }
+    }
+  ]
+}

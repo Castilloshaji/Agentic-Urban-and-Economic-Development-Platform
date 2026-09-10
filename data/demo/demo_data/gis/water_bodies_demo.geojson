@@ -1,0 +1,41 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "waterbody_id": "DEMO-WB-01",
+        "name": "Demo Lake",
+        "type": "lake",
+        "source": "synthetic"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              76.3,
+              9.95
+            ],
+            [
+              76.33,
+              9.95
+            ],
+            [
+              76.33,
+              9.98
+            ],
+            [
+              76.3,
+              9.98
+            ],
+            [
+              76.3,
+              9.95
+            ]
+          ]
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,71 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "road_id": "DEMO-R-01",
+        "name": "Demo Main Road",
+        "road_type": "primary",
+        "source": "geofabrik_style"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            76.2,
+            10.0
+          ],
+          [
+            76.4,
+            10.0
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "road_id": "DEMO-R-01-ALT",
+        "name": "DEMO MAIN RD",
+        "road_type": "primary",
+        "source": "opensdi_style"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            76.2003,
+            10.0006
+          ],
+          [
+            76.4002,
+            10.0007
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "road_id": "DEMO-R-02",
+        "name": "Demo Connector Road",
+        "road_type": "secondary",
+        "source": "geofabrik_style"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            76.27,
+            9.9
+          ],
+          [
+            76.27,
+            10.1
+          ]
+        ]
+      }
+    }
+  ]
+}

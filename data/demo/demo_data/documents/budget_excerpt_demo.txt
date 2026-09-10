@@ -1,0 +1,7 @@
+Demo Budget Document -- Excerpt (Synthetic)
+
+Placeholder budget text for pipeline testing. In this synthetic dataset, the
+transport capital allocation for Demo Taluk in FY2026 includes a provisional
+line item for feeder-route expansion connecting Demo Panchayat A and Demo
+Panchayat C to Demo Central Metro station, pending review of the overlapping
+Demo Flood Zone DEMO-FZ-01.

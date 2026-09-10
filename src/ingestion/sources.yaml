@@ -1,0 +1,69 @@
+# Remote sources per raw-data category, for `ingest.py --url <category>`.
+#
+# NOT YET WIRED UP — --url currently raises NotImplementedError. This file is
+# the intended shape of the download config; URLs below are the Phase 1 sources
+# from docs/ernakulam_phase1_architecture.md section 2, Stage 1.
+#
+# Each entry:
+#   name:      short slug, becomes the filename stem under data/raw/<category>/
+#   url:       direct download URL
+#   publisher: who publishes it (goes in data_dictionary.md)
+#   year:      dataset vintage
+#   notes:     access caveats, licence, manual steps
+
+population:
+  - name: census_district_handbook_ernakulam
+    url: ""
+    publisher: Census India
+    year: 2011
+    notes: District Census Handbook — literacy and household detail.
+
+economy:
+  - name: kerala_gddp_nddp
+    url: ""
+    publisher: Kerala DES (ecostat.kerala.gov.in)
+    year: ""
+    notes: GDDP/NDDP series; fallback is datahub.kerala.gov.in.
+
+gis:
+  - name: lsg_kerala_boundaries
+    url: ""
+    publisher: OpenDataKerala (lsg-kerala-data)
+    year: ""
+    notes: Panchayat/municipality/corporation/ward boundaries.
+  - name: geofabrik_kerala_osm
+    url: ""
+    publisher: Geofabrik
+    year: ""
+    notes: Roads, buildings, land use, water bodies. Clip to Ernakulam.
+
+transportation:
+  - name: kmrl_gtfs
+    url: ""
+    publisher: Kochi Metro Rail Ltd (Kochi Metro Open Data)
+    year: ""
+    notes: Metro GTFS feed.
+  - name: kochi_bus_gtfs
+    url: ""
+    publisher: KochiTransport / Jungle Bus
+    year: ""
+    notes: Bus GTFS feed.
+
+environment:
+  - name: ksdma_flood_hazard
+    url: ""
+    publisher: KSDMA
+    year: ""
+    notes: Flood hazard maps.
+
+documents:
+  - name: kerala_economic_review
+    url: ""
+    publisher: Kerala State Planning Board
+    year: ""
+    notes: RAG corpus.
+  - name: kerala_budget
+    url: ""
+    publisher: Kerala Finance Department
+    year: ""
+    notes: RAG corpus.

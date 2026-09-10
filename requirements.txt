@@ -1,0 +1,15 @@
+psycopg2-binary
+geopandas
+shapely
+pyproj
+neo4j
+qdrant-client
+sentence-transformers
+pandas
+python-dotenv
+pytest
+ollama
+langgraph
+pypdf
+anthropic
+httpx

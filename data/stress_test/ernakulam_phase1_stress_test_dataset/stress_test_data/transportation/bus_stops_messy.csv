@@ -1,0 +1,5 @@
+stop_id,name,lat,lon,admin_id,route_id,source,feed_start_date,feed_end_date
+DEMO-BS-01,Demo Panchayat A Stop,9.95,76.23,DEMO-P-01,DEMO-BR-01,kmrl_style,2026-01-01,2026-12-31
+DEMO-BS-02,Demo Panchayat C Stop,9.95,76.37,DEMO-P-03,DEMO-BR-02,kmrl_style,2026-01-01,2026-12-31
+DEMO-BS-03,Demo Connector Stop,10.0,76.3,DEMO-P-02,DEMO-BR-01,kmrl_style,2026-01-01,2026-12-31
+DEMO-BS-03-COMM,  demo connector stop ,10.0006,76.3004,DEMO-P-02,DEMO-BR-01B,community_gtfs_style,2022-09-26,2023-03-25
