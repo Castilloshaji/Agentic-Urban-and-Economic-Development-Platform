@@ -1,0 +1,8 @@
+taluk_name,measured_area_km2,census_area_km2,area_ratio,area_deficit_km2,source,source_level,data_year,boundary_vintage,quality_flag
+Aluva,320.95,532,0.6033,211.05,datameet_geohacker_kerala,3,2018,2001-census-era,area_mismatch_vs_census
+Paravur,194.13,173,1.1221,-21.13,datameet_geohacker_kerala,3,2018,2001-census-era,within_15pc
+Kochi,133.81,129,1.0373,-4.81,datameet_geohacker_kerala,3,2018,2001-census-era,within_15pc
+Kothamangalam,312.64,928,0.3369,615.36,datameet_geohacker_kerala,3,2018,2001-census-era,area_mismatch_vs_census
+Kanayannur,322.4,303,1.064,-19.4,datameet_geohacker_kerala,3,2018,2001-census-era,within_15pc
+Muvattupuzha,436.06,522,0.8354,85.94,datameet_geohacker_kerala,3,2018,2001-census-era,area_mismatch_vs_census
+Kunnathunad,689.88,464,1.4868,-225.88,datameet_geohacker_kerala,3,2018,2001-census-era,area_mismatch_vs_census

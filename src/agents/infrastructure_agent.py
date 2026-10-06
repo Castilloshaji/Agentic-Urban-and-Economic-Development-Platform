@@ -6,7 +6,7 @@ a feasibility verdict, the affected roads/parcels, an estimated cost and risks.
 
 from __future__ import annotations
 
-from ..digital_twin.twin import _postgres, get_context
+from ..digital_twin.twin import _postgres, get_context, get_derived_features
 from .base import AgentSpec, flatten_fact, run_agent
 
 OUTPUT_SCHEMA = {
@@ -41,6 +41,41 @@ def _roads_intersecting(admin_id: str, edition: str) -> list[dict]:
             (admin_id, edition),
         )
         return [dict(row) for row in cursor.fetchall()]
+
+
+RELEVANT_DERIVED = ("road_density_km_per_km2", "max_road_class", "row_narrow_share", "row_arterial_km_per_km2",)
+
+
+def _derived_facts(admin_id: str) -> list[dict]:
+    """The derived-layer values this domain should see, as twin facts.
+
+    Pulled from `admin_derived_feature`, which the Phase-1 tables do not carry.
+    Estimates keep their `is_estimate` flag and their `match_confidence` is
+    forced to `unmatched-estimate`, because an allocation of a district total is
+    not a measurement of this unit and must never read like one.
+    """
+    derived = get_derived_features(admin_id)
+    if not derived.get("found"):
+        return [{"label": "derived_features", "value": None,
+                 "note": derived.get("note")}]
+
+    collected = []
+    for label in RELEVANT_DERIVED:
+        for block, estimated in (("measured", False), ("estimated", True)):
+            if label not in derived[block]:
+                continue
+            tag = derived[block][label]
+            fact = {"label": f"derived.{label}", "value": tag["value"],
+                    "source": tag.get("source"), "data_year": tag.get("data_year")}
+            if estimated:
+                fact["match_confidence"] = "unmatched-estimate"
+                fact["note"] = ("allocated from a published district figure, not "
+                                "measured here; " + derived["caveat"])
+                if derived.get("population_imputed"):
+                    fact["note"] += (" This unit's population was imputed, so its "
+                                     "share is weaker than the others.")
+            collected.append(fact)
+    return collected
 
 
 def gather(admin_id: str) -> dict:
@@ -78,6 +113,7 @@ def facts(domain_data: dict) -> list[dict]:
         collected.append(flatten_fact(f"{zone['flood_zone_id']}.overlap_ratio",
                                       zone["overlap_ratio_of_admin"],
                                       note="physical constraint on siting"))
+    collected.extend(_derived_facts(domain_data["context"]["admin_id"]))
     return [f for f in collected if f]
 
 

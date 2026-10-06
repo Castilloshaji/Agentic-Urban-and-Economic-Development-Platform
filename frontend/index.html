@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ernakulam Digital Twin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="mast-id">
+    <span class="mark" aria-hidden="true"></span>
+    <div>
+      <h1>Ernakulam Digital Twin</h1>
+      <p class="mast-sub">Urban and economic development, modelled on government data</p>
+    </div>
+  </div>
+  <div class="mast-meta">
+    <span class="rule-label">District 07 · Kerala</span>
+    <div id="health" class="pill">connecting</div>
+  </div>
+</header>
+
+<section class="lede">
+  <div class="lede-text">
+    <h2>A working model of a district, not a dashboard about one.</h2>
+    <p>Ninety seven local bodies. Thirty four parameters each, every one
+      carrying the year it was published and who published it. Ask what a new
+      industrial park does to Malayattoor and the answer arrives in under a
+      second, because the answer is arithmetic.</p>
+    <p>Seven domain agents then argue about it. They read flood rasters,
+      landslide classes, transit feeds, census counts, clinic and school
+      locations, and the state's own grant formula. They can explain a verdict
+      and they can disagree with each other. What they cannot do is move a
+      weight or lift a hazard limit. That part is already settled.</p>
+  </div>
+  <dl class="tally">
+    <div><dt>Local bodies</dt><dd>97</dd></div>
+    <div><dt>Parameters</dt><dd>34</dd></div>
+    <div><dt>Domains</dt><dd>7</dd></div>
+    <div><dt>Agents</dt><dd>7</dd></div>
+    <div><dt>Unavailable</dt><dd class="zero">0</dd></div>
+    <div><dt>Store drift</dt><dd class="zero">0</dd></div>
+  </dl>
+</section>
+
+<main class="split">
+
+  <!-- ============ THE STAGE: map viewport ============ -->
+  <section id="map-panel" class="stage">
+    <div class="stage-head">
+      <span class="rule-label">The twin</span>
+      <label class="field inline-field">
+        <span>Surface</span>
+        <select id="layer-select">
+          <option value="flood_hist_50">Flood modelled share, KSDMA 50yr</option>
+          <option value="nearest_stop_m">Distance to nearest transit stop</option>
+          <option value="population">Population, Census 2011</option>
+          <option value="stop_count">Transit stop count</option>
+        </select>
+      </label>
+    </div>
+    <div id="map"></div>
+    <div class="stage-foot">
+      <div class="scale">
+        <span class="rule-label">Low</span>
+        <div id="legend-scale"></div>
+        <span class="rule-label">High</span>
+      </div>
+      <p class="hint">Click a local body to add or drop it from the working set.</p>
+    </div>
+
+    <div class="stage-pair">
+    <div class="card stage-tools" id="context-card" hidden>
+      <h3>Ground truth</h3>
+      <div id="admin-context" class="context"></div>
+    </div>
+
+    <div class="card stage-tools" id="explore-card">
+      <h3>Read the ground first</h3>
+      <p class="muted">Measured data only. No model runs. Answers land instantly.</p>
+      <button id="needs-run" class="ghost-btn">What is the working set short of</button>
+      <label class="field"><span>Rank the district for</span>
+        <select id="rank-scenario"></select>
+      </label>
+      <button id="rank-run" class="ghost-btn">Score all 97 local bodies</button>
+      <label class="field"><span>Same place, two objectives</span>
+        <div class="field-pair">
+          <select id="cmp-a"></select>
+          <select id="cmp-b"></select>
+        </div>
+      </label>
+      <button id="cmp-run" class="ghost-btn">Show what changes</button>
+      <p id="explore-note" class="muted"></p>
+    </div>
+    </div>
+  </section>
+
+  <!-- ============ ZONE 01: THE SETUP ============ -->
+  <aside id="controls" class="console">
+    <div class="zone-mark">
+      <span class="zone-num">01</span>
+      <span class="zone-name">The setup</span>
+    </div>
+
+    <div class="card lead-card">
+      <h3>Describe the intervention</h3>
+      <p class="muted">Your words, not a menu. The agents read this text.</p>
+      <textarea id="idea" rows="5" placeholder="Build an MSME industrial park with a shared effluent plant and a feeder bus link to Angamaly station. Roughly 900 manufacturing jobs."></textarea>
+    </div>
+
+    <div class="card">
+      <h3>Working set</h3>
+      <input id="search" type="search" placeholder="Search panchayat or municipality" autocomplete="off">
+      <div id="admin-list" class="picklist"></div>
+      <div id="chosen" class="chips"></div>
+    </div>
+
+    <div class="card">
+      <h3>Budget</h3>
+      <label class="field"><span>Rupees, crore</span>
+        <input id="budget" type="number" min="0" step="1" placeholder="120">
+      </label>
+      <label class="check"><input id="with-agents" type="checkbox" checked>
+        <span>Run the seven agents and the supervisor. Takes several minutes on
+        a local model.</span></label>
+      <button id="run" class="primary">Evaluate this intervention</button>
+      <p id="run-note" class="muted"></p>
+    </div>
+
+    <div class="card" id="ideate-card">
+      <h3>Or hand it a budget</h3>
+      <p class="muted">No description at all. The twin measures what the working
+        set lacks, splits the money across domains by that measured need, then
+        the agents propose the work.</p>
+      <label class="field"><span>Rupees, crore</span>
+        <input id="ideate-budget" type="number" min="1" step="1" placeholder="120">
+      </label>
+      <button id="ideate-run" class="secondary">Propose work for this budget</button>
+      <p id="ideate-note" class="muted"></p>
+    </div>
+
+  </aside>
+</main>
+
+<!-- ============ ZONE 02: THE CHAOS ============ -->
+<section class="zone" id="zone-chaos">
+  <div class="zone-mark wide">
+    <span class="zone-num">02</span>
+    <span class="zone-name">The chaos</span>
+    <span class="zone-note">Seven agents, one brief each, arguing inside their own
+      budget envelope</span>
+  </div>
+
+  <div class="card" id="proposals-card" hidden>
+    <h3>What each domain put forward</h3>
+    <p class="muted">Every proposal names the measured shortfall it targets. An
+      envelope is money already committed to that domain, so an agent that
+      proposes far below its envelope has to say why.</p>
+    <div id="proposals"></div>
+  </div>
+
+  <div class="card" id="agent-card" hidden>
+    <h3>Agent analyses</h3>
+    <p class="muted">Each agent reads your text, the measured position of every
+      selected area, and your budget. The Budget agent additionally computes
+      this area's share under Kerala's published devolution rule. None of them
+      can change a weight or clear a constraint.</p>
+    <div id="agents"></div>
+  </div>
+</section>
+
+<!-- ============ ZONE 03: THE RIPPLE EFFECT ============ -->
+<section class="zone" id="zone-ripple">
+  <div class="zone-mark wide">
+    <span class="zone-num">03</span>
+    <span class="zone-name">The ripple effect</span>
+    <span class="zone-note">What the data permits, what it forbids, and what it
+      costs</span>
+  </div>
+
+  <div class="card feature" id="supervisor-card" hidden>
+    <h3>The verdict</h3>
+    <p class="muted">The supervisor weighs the four positions against each other.
+      It receives the measured outcome as binding. It can explain a block and
+      qualify it. It cannot overturn one.</p>
+    <div id="supervisor"></div>
+  </div>
+
+  <div class="card" id="pn-card" hidden>
+    <h3>Both sides of it</h3>
+    <p class="muted">Each point traces to a domain analysis or a measured figure.</p>
+    <div id="pn"></div>
+  </div>
+
+  <div class="card feature" id="portfolio-card" hidden>
+    <h3>The costed portfolio</h3>
+    <p class="muted">Assembled from seven domain proposals, inside the budget.
+      The needs and the split were computed before any agent ran.</p>
+    <div id="portfolio"></div>
+  </div>
+
+  <div class="card" id="areas-card" hidden>
+    <h3>Measured position, area by area</h3>
+    <p class="muted">Computed from government data before any model was called.</p>
+    <div id="areas"></div>
+  </div>
+
+  <div class="card" id="needs-card" hidden>
+    <h3>What the data says is missing</h3>
+    <p class="muted">Severity is percentile of need across all 97 local bodies.
+      Nothing here came from a model.</p>
+    <div id="split"></div>
+    <div id="needs"></div>
+  </div>
+
+  <div class="card" id="priority-card" hidden>
+    <h3>Domain weights</h3>
+    <p class="muted">Blended across the working set by population. Identical
+      inputs give identical weights, every time.</p>
+    <div id="weights"></div>
+    <div id="weight-basis" class="muted"></div>
+    <details><summary>Derivation, area by area</summary><div id="weight-detail"></div></details>
+  </div>
+
+  <div class="card" id="constraint-card" hidden>
+    <h3>Hard limits</h3>
+    <p class="muted">Weights answer how much influence. Limits answer whether it
+      is allowed at all. A blocking limit cannot be cleared by weights or by
+      anything a model writes.</p>
+    <div id="constraints"></div>
+  </div>
+
+  <div class="card" id="conflict-card" hidden>
+    <h3>Conflicts</h3>
+    <p class="muted">Computed from measured facts before any narrative exists.</p>
+    <div id="conflicts"></div>
+  </div>
+
+  <div class="card" id="rank-card" hidden>
+    <h3>Where this objective fits best</h3>
+    <p class="muted">All 97 local bodies scored on measured data. Blocked ones
+      included and marked.</p>
+    <div id="rank"></div>
+  </div>
+
+  <div class="card feature" id="cmp-card" hidden>
+    <h3>Same data. Different objective. Different answer.</h3>
+    <p class="muted">Nothing about the place changes between these two columns.
+      Only what you are trying to do.</p>
+    <div id="cmp"></div>
+  </div>
+
+  <div class="card" id="coverage-card" hidden>
+    <h3>Provenance</h3>
+    <p class="muted">Every parameter behind the verdict, what it measured,
+      how old it is and how far it is trusted.</p>
+    <div id="coverage-summary"></div>
+    <div id="coverage"></div>
+    <div id="anchors" hidden></div>
+  </div>
+</section>
+
+<!-- ============ THE RECORD ============ -->
+<section class="zone" id="zone-record">
+  <div class="zone-mark wide">
+    <span class="zone-num">04</span>
+    <span class="zone-name">The record</span>
+    <span class="zone-note">What was committed, and where it got to</span>
+  </div>
+
+  <div class="card" id="ledger-card">
+    <h3>Implementation history</h3>
+    <p class="muted">Anything logged here drops out of future proposals. The
+      agents are told not to repeat it, and a proposal that repeats it anyway
+      gets flagged. Finishing a project does not rewrite a measurement.</p>
+    <div class="ledgerbar">
+      <label class="field inline-field"><span>Showing</span>
+        <select id="ledger-filter">
+          <option value="">every status</option>
+          <option value="planned">planned</option>
+          <option value="in_progress">in progress</option>
+          <option value="completed">completed</option>
+          <option value="on_hold">on hold</option>
+          <option value="cancelled">cancelled</option>
+        </select>
+      </label>
+      <button id="manual-toggle" class="tiny">Log work by hand</button>
+    </div>
+    <div id="manual-form" hidden>
+      <p class="muted">For work that did not come from a proposal. It counts the
+        same way.</p>
+      <input id="m-title" type="text" placeholder="What is being done">
+      <div class="mrow">
+        <select id="m-domain">
+          <option value="environment">environment</option>
+          <option value="infrastructure">infrastructure</option>
+          <option value="transportation">transportation</option>
+          <option value="economic">economic</option>
+        </select>
+        <select id="m-addresses"><option value="">targets which shortfall</option></select>
+        <input id="m-cost" type="number" min="0" step="0.1" placeholder="Rs crore">
+      </div>
+      <button id="manual-save" class="secondary">Log it</button>
+      <p id="manual-note" class="muted"></p>
+    </div>
+    <div id="ledger-summary"></div>
+    <div id="ledger"></div>
+  </div>
+</section>
+
+<footer class="colophon">
+  <div>
+    <span class="rule-label">Sources</span>
+    <p>KSDMA flood return probability. GSI landslide susceptibility. Census of
+      India 2011. Kochi Transport GTFS. KMRL station list. OpenStreetMap via
+      Geofabrik. Kerala Ecostat. Ministry of MSME.</p>
+  </div>
+  <div>
+    <span class="rule-label">Standing rule</span>
+    <p>No value is returned without the year it was published, who published it,
+      and how far it can be trusted.</p>
+  </div>
+  <div id="output" hidden></div>
+</footer>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

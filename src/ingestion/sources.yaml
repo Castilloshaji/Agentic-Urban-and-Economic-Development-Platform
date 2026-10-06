@@ -1,69 +1,176 @@
-# Remote sources per raw-data category, for `ingest.py --url <category>`.
+# Source register for `ingest.py --url <category>`.
 #
-# NOT YET WIRED UP — --url currently raises NotImplementedError. This file is
-# the intended shape of the download config; URLs below are the Phase 1 sources
-# from docs/ernakulam_phase1_architecture.md section 2, Stage 1.
+# Every entry carries a source LEVEL, which travels into the manifest and from
+# there into provenance. Nothing downloaded at level 3 or 4 may be presented as
+# authoritative government data.
 #
-# Each entry:
-#   name:      short slug, becomes the filename stem under data/raw/<category>/
-#   url:       direct download URL
-#   publisher: who publishes it (goes in data_dictionary.md)
-#   year:      dataset vintage
-#   notes:     access caveats, licence, manual steps
+#   1  government department / official GIS / official report
+#   2  government open-data portal (OGD, state portals)
+#   3  OpenStreetMap or community-maintained dataset
+#   4  secondary / derived / press
+#
+# fetch:
+#   auto      direct file URL, downloadable unattended
+#   large     direct file URL but big — only with --include-large
+#   api_key   needs a registered key in .env
+#   manual    JS-gated, login-walled or HTML-only; a human must download it
+#
+# Every URL marked `auto` or `large` below was verified reachable on 2026-10-05.
 
-population:
-  - name: census_district_handbook_ernakulam
+environment:
+  - name: ksdma_flood_return_probability_historical_10_25_50
+    url: https://sdma.kerala.gov.in/wp-content/uploads/2026/06/1.-Flood-Return-Probability-Historical-10-25-50-years.zip
+    publisher: Kerala State Disaster Management Authority
+    level: 1
+    fetch: auto
+    year: 2026
+    notes: GeoTIFF rasters, EPSG:4326, ~93 m. Return periods 10/25/50 yr.
+  - name: ksdma_flood_return_probability_historical_100_200_500
+    url: https://sdma.kerala.gov.in/wp-content/uploads/2026/06/2.Flood-Return-Probability-Historical-100-200-500-years.zip
+    publisher: Kerala State Disaster Management Authority
+    level: 1
+    fetch: auto
+    year: 2026
+    notes: Long return periods for extreme-event constraint thresholds.
+  - name: ksdma_flood_return_probability_rcp85_10_25_50
+    url: https://sdma.kerala.gov.in/wp-content/uploads/2026/06/3.-Flood-Return-Probability-RCP8.5-10-25-50-years.zip
+    publisher: Kerala State Disaster Management Authority
+    level: 1
+    fetch: auto
+    year: 2026
+    notes: RCP 8.5 climate scenario — basis for climate_vulnerability.
+  - name: ksdma_flood_return_probability_rcp85_100_200_500
+    url: https://sdma.kerala.gov.in/wp-content/uploads/2026/06/4.Flood-Return-Probability-RCP8.5-100-200-500-years.zip
+    publisher: Kerala State Disaster Management Authority
+    level: 1
+    fetch: auto
+    year: 2026
+    notes: RCP 8.5 extreme return periods.
+  - name: gsi_landslide_susceptibility_ernakulam
+    url: https://sdma.kerala.gov.in/wp-content/uploads/2025/08/Ernakulam.zip
+    publisher: Geological Survey of India via KSDMA
+    level: 1
+    fetch: auto
+    year: 2025
+    notes: Shapefile, EPSG:32643, zones High/Moderate/Low.
+  - name: ksdma_flood_hazard_ernakulam_historical_map
+    url: https://sdma.kerala.gov.in/wp-content/uploads/2022/05/Ernakulam_Hist.pdf
+    publisher: Kerala State Disaster Management Authority
+    level: 1
+    fetch: auto
+    year: 2022
+    notes: Cartographic PDF. Reference only; rasters are the analysable form.
+  - name: imd_rainfall_series
     url: ""
-    publisher: Census India
-    year: 2011
-    notes: District Census Handbook — literacy and household detail.
-
-economy:
-  - name: kerala_gddp_nddp
-    url: ""
-    publisher: Kerala DES (ecostat.kerala.gov.in)
+    publisher: India Meteorological Department
+    level: 1
+    fetch: manual
     year: ""
-    notes: GDDP/NDDP series; fallback is datahub.kerala.gov.in.
+    notes: DATA UNAVAILABLE for unattended fetch — gated behind request/licence.
+
+transportation:
+  - name: kochi_transport_gtfs
+    url: https://jungle-bus.github.io/KochiTransport/KochiTransport.zip
+    publisher: Jungle Bus / OpenStreetMap community
+    level: 3
+    fetch: auto
+    year: 2022
+    notes: 3258 stops, 473 routes, frequencies.txt. Feed window ends 2023-03-25
+      — the stale_feed check must stay on.
+  - name: kmrl_metro_open_data
+    url: ""
+    publisher: Kochi Metro Rail Ltd
+    level: 1
+    fetch: manual
+    year: ""
+    notes: Portal is HTML; no direct GTFS archive URL confirmed.
 
 gis:
   - name: lsg_kerala_boundaries
+    url: https://raw.githubusercontent.com/opendatakerala/lsg-kerala-data/main/data/kerala_lsg_data.geojson
+    publisher: OpenDataKerala / OpenStreetMap Kerala (ODbL)
+    level: 3
+    fetch: auto
+    year: 2024
+    notes: 1034 LSG polygons statewide with LSGI codes; 97 in Ernakulam.
+  - name: datameet_kerala_admin_boundaries
+    url: https://codeload.github.com/geohacker/kerala/zip/refs/heads/master
+    filename: datameet_kerala_admin_boundaries.zip
+    publisher: DataMeet / geohacker
+    level: 3
+    fetch: auto
+    year: 2018
+    notes: state/district/taluk/village GeoJSON. Taluk areas total only 78.5%
+      of the Census district area — load with that deficit recorded.
+  - name: geofabrik_southern_zone_osm
+    url: https://download.geofabrik.de/asia/india/southern-zone-latest.osm.pbf
+    publisher: Geofabrik / OpenStreetMap (ODbL)
+    level: 3
+    fetch: large
+    year: rolling
+    notes: 532 MB. Kerala has NO separate Geofabrik extract — it is inside
+      Southern Zone. Clip to Ernakulam with osmium/pyrosm.
+  - name: bhuvan_lulc
     url: ""
-    publisher: OpenDataKerala (lsg-kerala-data)
+    publisher: ISRO / NRSC Bhuvan
+    level: 1
+    fetch: manual
     year: ""
-    notes: Panchayat/municipality/corporation/ward boundaries.
-  - name: geofabrik_kerala_osm
-    url: ""
-    publisher: Geofabrik
-    year: ""
-    notes: Roads, buildings, land use, water bodies. Clip to Ernakulam.
+    notes: Thematic portal requires interactive selection.
 
-transportation:
-  - name: kmrl_gtfs
+population:
+  - name: ernakulam_census_portal
     url: ""
-    publisher: Kochi Metro Rail Ltd (Kochi Metro Open Data)
-    year: ""
-    notes: Metro GTFS feed.
-  - name: kochi_bus_gtfs
+    publisher: Ernakulam District Administration
+    level: 1
+    fetch: manual
+    year: 2011
+    notes: HTML pages, no tabular export. Figures transcribed with provenance.
+  - name: census_village_town_pca_kerala
     url: ""
-    publisher: KochiTransport / Jungle Bus
-    year: ""
-    notes: Bus GTFS feed.
+    publisher: Census of India via OGD
+    level: 2
+    fetch: api_key
+    year: 2011
+    notes: Village/Town Primary Census Abstract. Needs data.gov.in API key.
 
-environment:
-  - name: ksdma_flood_hazard
+economy:
+  - name: kerala_ecostat_district_gdp
     url: ""
-    publisher: KSDMA
+    publisher: Kerala DES (ecostat.kerala.gov.in)
+    level: 1
+    fetch: manual
     year: ""
-    notes: Flood hazard maps.
+    notes: GDDP/NDDP. Portal responds only after ~35 s; tables are HTML/PDF.
+  - name: udyam_msme_district
+    url: ""
+    publisher: Ministry of MSME via Kerala OGD
+    level: 2
+    fetch: api_key
+    year: ""
+    notes: DATA UNAVAILABLE as a file — Kerala OGD catalog returns
+      "No Result Found". National API needs a key.
 
 documents:
   - name: kerala_economic_review
     url: ""
     publisher: Kerala State Planning Board
+    level: 1
+    fetch: manual
     year: ""
-    notes: RAG corpus.
-  - name: kerala_budget
+    notes: RAG corpus. Per-year PDF links change; collect manually.
+  - name: kerala_budget_documents
     url: ""
     publisher: Kerala Finance Department
+    level: 1
+    fetch: manual
     year: ""
     notes: RAG corpus.
+  - name: deliberately_unreachable_probe
+    url: https://kerala.data.gov.in/this-path-does-not-exist-acquisition-probe.csv
+    publisher: Kerala OGD (probe)
+    level: 2
+    fetch: auto
+    year: ""
+    notes: D20 regression probe. MUST log an acquisition failure and continue,
+      never crash the run. Do not remove.

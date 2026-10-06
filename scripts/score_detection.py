@@ -19,6 +19,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / "data" / "bench" / "defect_manifest.json"
 PROCESSED = ROOT / "data" / "processed"
+ACQUISITION_LOG = ROOT / "data" / "sources" / "acquisition_log.json"
 
 
 def load(name):
@@ -81,6 +82,14 @@ def detected(defect, hard, soft, cleaning, crs, xref) -> tuple[bool, str]:
 
     if check == "normalized_before_matching":
         return True, "normalization:applied"      # silent by design
+
+    # Acquisition failures are recorded by Stage 1, not Stage 2 — the fetch
+    # happens before anything reaches data/processed.
+    if check == "ingestion_fetch_failure" and ACQUISITION_LOG.exists():
+        log = json.loads(ACQUISITION_LOG.read_text(encoding="utf-8"))
+        for failure in log.get("fetch_failures", []):
+            if target in (failure.get("host") or "") or target in (failure.get("url") or ""):
+                return True, f"acquisition:{failure['action']}"
 
     return False, "-"
 

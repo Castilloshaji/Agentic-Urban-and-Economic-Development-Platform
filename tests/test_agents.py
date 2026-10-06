@@ -1,4 +1,4 @@
-"""Smoke tests for the four domain agents against the loaded demo dataset.
+"""Smoke tests for the four domain agents against real Ernakulam data.
 
 These call a real LLM backend, so they are slower than unit tests. Each agent is
 run once per session and every assertion reads from that one result.
@@ -26,13 +26,14 @@ SCENARIO = (
     "Extend a feeder bus route to connect this panchayat to the nearest metro "
     "station, where part of the corridor overlaps a flood hazard zone."
 )
-ADMIN_ID = "DEMO-P-02"
+ADMIN_ID = "G07027"   # Choornikkara: 4 metro stations, 7 bus stops, 1 flood zone
 
-# Same demo-edition guard as tests/test_digital_twin.py.
+# Same edition guard as tests/test_digital_twin.py.
 _loaded = get_context(ADMIN_ID)
 pytestmark = pytest.mark.skipif(
-    _loaded.get("dataset_edition") != "demo",
-    reason=f"stores hold the {_loaded.get('dataset_edition')!r} edition; these assert demo facts",
+    _loaded.get("dataset_edition") != "ernakulam",
+    reason=(f"stores hold the {_loaded.get('dataset_edition')!r} edition; these assert "
+            "real Ernakulam facts. Reload with: bash scripts/run_phase1.sh real"),
 )
 
 AGENTS = {
@@ -91,12 +92,14 @@ def test_environment_agent_references_the_actual_flood_zone(results):
     result = results["environment"]
     facts = {f["label"]: f for f in result["evidence"]["twin_facts"]}
 
-    assert facts["DEMO-FZ-01.risk_level"]["value"] == "high"
-    assert facts["DEMO-FZ-01.risk_level"]["data_year"] is not None
+    assert facts["EKM-FZ-002.risk_level"]["value"] == "high"
+    assert facts["EKM-FZ-002.risk_level"]["data_year"] is not None
+    # The whole unit lies inside the zone, which is what makes it a good fixture.
+    assert facts["EKM-FZ-002.overlap_ratio"]["value"] == 1.0
 
     zones = result["analysis"].get("affected_flood_zones") or []
     rendered = str(zones) + str(result["analysis"])
-    assert "DEMO-FZ-01" in rendered, "environment agent did not name the flood zone"
+    assert "EKM-FZ-002" in rendered, "environment agent did not name the flood zone"
     assert "high" in rendered.lower(), "environment agent did not carry the risk_level through"
 
 
@@ -113,11 +116,43 @@ def test_economic_agent_tolerates_series_gaps(results):
 def test_economic_agent_marks_inherited_figures_as_estimates(results):
     """District figures reaching a panchayat must not pose as its own measurements."""
     facts = {f["label"]: f for f in results["economic"]["evidence"]["twin_facts"]}
-    assert facts["figures_inherited_from"]["value"] == "DEMO-D-01"
+    assert facts["figures_inherited_from"]["value"] == "EKM-D"
     assert facts["figures_inherited_from"]["match_confidence"] == "unmatched-estimate"
 
 
-def test_transportation_agent_sees_both_metro_stations(results):
+def test_transportation_agent_sees_every_station_in_the_unit(results):
+    """All four KMRL stations inside Choornikkara, attributed by containment."""
     labels = {f["label"] for f in results["transportation"]["evidence"]["twin_facts"]}
-    assert "DEMO-MS-01.name" in labels
-    assert "DEMO-MS-02.name" in labels
+    stations = {label for label in labels if label.endswith(".name")
+                and label.startswith("EKM-MS-")}
+    assert len(stations) == 4, sorted(stations)
+
+
+def test_agents_receive_the_derived_layers(results):
+    """The OSM, KMRL and allocated-economic values must reach the agents.
+
+    They live in `admin_derived_feature`, which the Phase-1 twin functions do
+    not read, so without this wiring they drove the deterministic weights while
+    staying invisible to the analysts.
+    """
+    expected = {
+        "environment": "derived.water_distance_m",
+        "transportation": "derived.nearest_metro_m",
+        "economic": "derived.msme_estimated_count",
+        "infrastructure": "derived.row_narrow_share",
+    }
+    for name, label in expected.items():
+        labels = {f["label"] for f in results[name]["evidence"]["twin_facts"]}
+        assert label in labels, f"{name} did not receive {label}"
+
+
+def test_allocated_estimates_reach_agents_marked_as_estimates(results):
+    """An allocation must never arrive looking like a measurement of this unit."""
+    facts = {f["label"]: f for f in results["economic"]["evidence"]["twin_facts"]}
+    for label in ("derived.msme_estimated_count", "derived.income_per_capita_estimate"):
+        assert facts[label]["match_confidence"] == "unmatched-estimate", label
+        assert "allocated from a published district figure" in facts[label]["note"]
+
+    # And a real measurement is not slandered as an estimate.
+    water = {f["label"]: f for f in results["environment"]["evidence"]["twin_facts"]}
+    assert water["derived.water_distance_m"].get("match_confidence") != "unmatched-estimate"

@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 from contextlib import contextmanager
 from datetime import date, datetime
+from decimal import Decimal
 from typing import Any
 
 from ..storage.neo4j.load import neo4j_settings
@@ -68,6 +69,10 @@ def tagged(value: Any, row: dict | None = None, **overrides) -> dict:
         "source_date": row.get("source_date"),
         "match_confidence": row.get("match_confidence", "exact"),
         "dataset_edition": row.get("dataset_edition"),
+        # Review 2: the source hierarchy level (1 government .. 4 secondary).
+        # Carried here so a consumer can tell an official figure from a
+        # community-maintained one without going back to the register.
+        "source_level": row.get("source_level"),
     }
     tag.update(overrides)
     # Some sources (the metro station CSV, for one) publish no vintage columns at
@@ -202,6 +207,13 @@ def get_transit_access(admin_id: str, edition: str | None = None) -> dict:
     A stop whose GTFS feed expired years ago is still a stop, so it is returned —
     but with feed_is_stale set, because "there is a bus stop here" and "buses
     currently serve this stop" are different claims.
+
+    Stations and stops are matched by geometry, not by their `admin_id` column.
+    The real KMRL and GTFS sources tag every point with the district
+    (`EKM-D`), so an attribute join finds nothing below district level — it
+    silently returned zero stations for every panchayat. The coordinates are
+    real, so containment is the reliable test and it works whatever a source
+    chose to put in that column.
     """
     today = date.today()
     with _postgres() as cursor:
@@ -213,12 +225,16 @@ def get_transit_access(admin_id: str, edition: str | None = None) -> dict:
 
         cursor.execute(
             """
-            SELECT station_id, name, line, source, source_date, data_year, revision_status,
-                   dataset_edition, match_confidence, soft_check_flags::text AS soft_check_flags,
-                   ST_X(geom) AS lon, ST_Y(geom) AS lat
-              FROM metro_station
-             WHERE admin_id = %s AND dataset_edition = %s
-             ORDER BY station_id
+            SELECT m.station_id, m.name, m.line, m.source, m.source_date, m.data_year,
+                   m.revision_status, m.dataset_edition, m.match_confidence,
+                   m.soft_check_flags::text AS soft_check_flags,
+                   ST_X(m.geom) AS lon, ST_Y(m.geom) AS lat
+              FROM metro_station m
+              JOIN admin_boundary a
+                ON a.admin_id = %s AND a.dataset_edition = m.dataset_edition
+               AND ST_Contains(a.geom, m.geom)
+             WHERE m.dataset_edition = %s
+             ORDER BY m.station_id
             """,
             (admin_id, boundary_edition),
         )
@@ -226,13 +242,17 @@ def get_transit_access(admin_id: str, edition: str | None = None) -> dict:
 
         cursor.execute(
             """
-            SELECT stop_id, name, route_id, feed_start_date, feed_end_date, source, source_date,
-                   data_year, revision_status, dataset_edition, match_confidence,
-                   soft_check_flags::text AS soft_check_flags,
-                   ST_X(geom) AS lon, ST_Y(geom) AS lat
-              FROM bus_stop
-             WHERE admin_id = %s AND dataset_edition = %s
-             ORDER BY stop_id
+            SELECT b.stop_id, b.name, b.route_id, b.feed_start_date, b.feed_end_date,
+                   b.source, b.source_date, b.data_year, b.revision_status,
+                   b.dataset_edition, b.match_confidence,
+                   b.soft_check_flags::text AS soft_check_flags,
+                   ST_X(b.geom) AS lon, ST_Y(b.geom) AS lat
+              FROM bus_stop b
+              JOIN admin_boundary a
+                ON a.admin_id = %s AND a.dataset_edition = b.dataset_edition
+               AND ST_Contains(a.geom, b.geom)
+             WHERE b.dataset_edition = %s
+             ORDER BY b.stop_id
             """,
             (admin_id, boundary_edition),
         )
@@ -482,3 +502,203 @@ def get_context(admin_id: str, edition: str | None = None) -> dict:
             "2025 delimitation — do not sum across the two without saying so."
         ),
     }
+
+
+# ---------------------------------------------------------------------------
+# Review 2 extensions
+#
+# These read the real hazard and transit features from PostGIS rather than the
+# CSVs, so the twin stays the single query layer and the new data sits under the
+# same cross-store verification as everything else.
+# ---------------------------------------------------------------------------
+
+# Which derived columns are measurements and which are allocations. The split is
+# hard-coded rather than inferred because getting it wrong would present an
+# estimate as a measurement, which is the one mistake this layer exists to
+# prevent.
+DERIVED_MEASURED = ("road_density_km_per_km2", "max_road_class", "row_narrow_share",
+                    "row_arterial_km_per_km2", "row_lane_tag_coverage",
+                    "water_area_share", "water_distance_m", "nearest_metro_m",
+                    "nearest_metro_station", "metro_stations_in_unit",
+                    "health_count", "health_nearest_m", "health_per_km2",
+                    "education_count", "education_nearest_m", "education_per_km2")
+DERIVED_ESTIMATED = ("msme_estimated_count", "msme_per_1000_people",
+                     "msme_density_per_km2", "income_per_capita_estimate",
+                     "gddp_share_estimate_crore", "employment_capacity_index",
+                     "health_capacity", "health_per_1000",
+                     "education_capacity", "education_per_1000")
+
+
+def get_derived_features(admin_id: str, edition: str | None = None) -> dict:
+    """The derived feature layers for one unit: OSM, KMRL, and the estimates.
+
+    These are the quantities the Phase-1 tables never carried — distance to the
+    nearest metro station, how much of the unit is water, how much of its road
+    network is narrow-class, and the economic figures allocated down from
+    published district totals.
+
+    Measurements and estimates are returned in separate blocks, each value
+    vintage-tagged, and every estimate carries `is_estimate: True`. An agent
+    reading this cannot confuse "687 m from water" with "~2,223 enterprises"
+    unless it ignores the label.
+    """
+    with _postgres() as cursor:
+        boundary = _fetch_boundary(cursor, admin_id, edition)
+        if not boundary:
+            return _not_found(admin_id, edition)
+        boundary_edition = boundary["dataset_edition"]
+        cursor.execute(
+            """
+            SELECT * FROM admin_derived_feature
+             WHERE admin_id = %s AND dataset_edition = %s
+            """,
+            (admin_id, boundary_edition),
+        )
+        row = cursor.fetchone()
+
+    if not row:
+        return {
+            "admin_id": admin_id, "found": False,
+            "dataset_edition": boundary_edition,
+            "note": ("No derived features for this unit. Build them with "
+                     "python3 -m src.features.build_all, then load with "
+                     "python3 -m src.storage.postgres.load_features."),
+        }
+
+    def block(columns, is_estimate):
+        out = {}
+        for column in columns:
+            value = row.get(column)
+            out[column] = tagged(
+                float(value) if isinstance(value, Decimal) else value, row,
+                is_estimate=is_estimate)
+        return out
+
+    return {
+        "admin_id": admin_id,
+        "found": True,
+        "dataset_edition": boundary_edition,
+        "retrieved_at": datetime.now().astimezone().isoformat(),
+        "measured": block(DERIVED_MEASURED, False),
+        "estimated": block(DERIVED_ESTIMATED, True),
+        "allocation": row.get("econ_allocation"),
+        "population_imputed": bool(row.get("econ_population_imputed")),
+        "caveat": ("Values under 'estimated' are allocations of published district "
+                   "figures, not measurements of this unit. See GET /api/anchors "
+                   "for the figures they were allocated from."),
+    }
+
+
+def get_development_parameters(admin_id: str, scenario_key: str | None = None) -> dict:
+    """Every parameter for one local body, optionally narrowed to one scenario."""
+    from ..decision.parameters import parameters_for
+    from ..decision.scenarios import get as get_scenario
+
+    params = [p.as_dict() for p in parameters_for(admin_id)]
+    if scenario_key:
+        wanted = {n for names in get_scenario(scenario_key).parameters.values() for n in names}
+        params = [p for p in params if p["name"] in wanted]
+    counts: dict[str, int] = {}
+    for prm in params:
+        counts[prm["status"]] = counts.get(prm["status"], 0) + 1
+    return {"admin_id": admin_id, "scenario": scenario_key,
+            "parameters": params, "by_status": counts}
+
+
+def get_environmental_risk(admin_id: str) -> dict:
+    """Measured hazard for one unit, straight from the loaded KSDMA/GSI tables."""
+    with _postgres() as cursor:
+        cursor.execute(
+            """SELECT name, flood_share_hist_50yr, flood_share_rcp85_50yr,
+                      flood_share_hist_100yr, landslide_susceptibility, landslide_rank,
+                      source, source_level, data_year
+                 FROM admin_hazard_feature WHERE admin_id = %s""", (admin_id,))
+        row = cursor.fetchone()
+    if not row:
+        return _not_found(admin_id, None)
+    hist = row["flood_share_hist_50yr"]
+    rcp = row["flood_share_rcp85_50yr"]
+    meta = {"source": row["source"], "source_level": row["source_level"],
+            "data_year": row["data_year"]}
+    return {
+        "admin_id": admin_id, "name": row["name"], "found": True,
+        "flood_share_50yr": tagged(float(hist) if hist is not None else None, meta),
+        "flood_share_100yr": tagged(
+            float(row["flood_share_hist_100yr"]) if row["flood_share_hist_100yr"] is not None else None, meta),
+        "flood_share_rcp85_50yr": tagged(float(rcp) if rcp is not None else None, meta),
+        "climate_delta": tagged(
+            round(float(rcp) - float(hist), 6) if (hist is not None and rcp is not None) else None,
+            meta, note="RCP 8.5 minus historical at the 50-year return period"),
+        "landslide_susceptibility": tagged(row["landslide_susceptibility"], meta),
+        "caveat": "Flood values are a modelled return-period quantity, not a depth. "
+                  "The layer is a hazard classification, not a forecast.",
+    }
+
+
+def get_accessibility_score(admin_id: str) -> dict:
+    """Transit accessibility from the real GTFS feed, with its staleness."""
+    with _postgres() as cursor:
+        cursor.execute(
+            """SELECT stop_count, stop_density_per_km2, trips_per_stop, nearest_stop_m,
+                      feed_end_date, feed_months_stale, source, source_level, data_year
+                 FROM transit_feature WHERE admin_id = %s""", (admin_id,))
+        row = cursor.fetchone()
+    if not row:
+        return _not_found(admin_id, None)
+    meta = {"source": row["source"], "source_level": row["source_level"],
+            "data_year": row["data_year"]}
+    stale = row["feed_months_stale"]
+    return {
+        "admin_id": admin_id, "found": True,
+        "stop_count": tagged(row["stop_count"], meta),
+        "stop_density_per_km2": tagged(
+            float(row["stop_density_per_km2"]) if row["stop_density_per_km2"] is not None else None, meta),
+        "trips_per_stop": tagged(
+            float(row["trips_per_stop"]) if row["trips_per_stop"] is not None else None, meta),
+        "nearest_stop_m": tagged(
+            float(row["nearest_stop_m"]) if row["nearest_stop_m"] is not None else None, meta),
+        "feed_is_stale": tagged(bool(stale and stale > STALE_FEED_MONTHS), meta,
+                                months_since_feed_end=stale,
+                                threshold_months=STALE_FEED_MONTHS),
+    }
+
+
+def get_infrastructure_score(admin_id: str) -> dict:
+    """Infrastructure-domain parameters, with the unavailable ones named."""
+    bundle = get_development_parameters(admin_id)
+    infra = [p for p in bundle["parameters"] if p["domain"] == "infrastructure"]
+    available = [p for p in infra if p["normalized"] is not None]
+    return {
+        "admin_id": admin_id,
+        "score": round(sum(p["normalized"] for p in available) / len(available), 4) if available else None,
+        "parameters": infra,
+        "unavailable": [p["name"] for p in infra if p["status"] == "unavailable"],
+    }
+
+
+def get_economic_potential(admin_id: str) -> dict:
+    """Economic-domain parameters. Most are proxies — the dict says which."""
+    bundle = get_development_parameters(admin_id)
+    econ = [p for p in bundle["parameters"] if p["domain"] == "economic"]
+    available = [p for p in econ if p["normalized"] is not None]
+    return {
+        "admin_id": admin_id,
+        "score": round(sum(p["normalized"] for p in available) / len(available), 4) if available else None,
+        "parameters": econ,
+        "proxies": [p["name"] for p in econ if p["status"] == "proxy"],
+        "unavailable": [p["name"] for p in econ if p["status"] == "unavailable"],
+        "caveat": "Economic indicators are published at district level only; nothing "
+                  "here is a measured local-body economic figure.",
+    }
+
+
+def get_agent_priority_features(admin_id: str, scenario_key: str) -> dict:
+    """The full priority computation — the twin's view of the decision engine."""
+    from ..decision.priority import compute
+    return compute(admin_id, scenario_key)
+
+
+def get_candidate_area_score(scenario_key: str, limit: int = 15) -> list[dict]:
+    """Rank local bodies for one objective."""
+    from ..decision.runner import rank_units
+    return rank_units(scenario_key, limit)

@@ -32,10 +32,20 @@ BEGIN
 END
 $$;
 
-DROP TABLE IF EXISTS admin_code_xref, bus_stop, metro_station, population_legacy_ward,
+DROP TABLE IF EXISTS audit_event, decision, constraint_result, agent_priority,
+                     scenario_parameter, scenario_run, transit_feature,
+                     admin_hazard_feature, admin_derived_feature,
+                     admin_code_xref, bus_stop, metro_station, population_legacy_ward,
                      population_panchayat,
                      population_taluk,
                      flood_zone, water_body, road, economic_indicator, admin_boundary CASCADE;
+
+-- NOTE: `implementation` is deliberately NOT in that list. Every other table
+-- here is derived from files and can be rebuilt by re-running the pipeline.
+-- The implementation ledger is the opposite: it records decisions a person
+-- made, which exist nowhere else and cannot be regenerated. Dropping it on a
+-- schema reapply would destroy the only copy, so it is created
+-- IF NOT EXISTS below and left alone.
 
 
 -- ---------------------------------------------------------------------------
@@ -386,3 +396,280 @@ CREATE TABLE bus_stop (
 CREATE INDEX bus_stop_geom_gist    ON bus_stop USING GIST (geom);
 CREATE INDEX bus_stop_admin_ix     ON bus_stop (admin_id);
 CREATE INDEX bus_stop_feed_end_ix  ON bus_stop (feed_end_date);
+
+
+-- ===========================================================================
+-- REVIEW 2 — real hazard and transit features, and the decision audit trail
+-- ===========================================================================
+
+-- Zonal statistics over the KSDMA flood return-probability rasters plus the GSI
+-- landslide join. One row per local body. These are the measured inputs the
+-- parameter engine normalises; keeping them in the database (rather than only as
+-- CSVs) is what puts them under the cross-store verification.
+CREATE TABLE admin_hazard_feature (
+    id                     BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    admin_id               TEXT    NOT NULL,
+    name                   TEXT,
+    local_auth             TEXT,
+    flood_share_hist_10yr  NUMERIC(8,6),
+    flood_share_hist_25yr  NUMERIC(8,6),
+    flood_share_hist_50yr  NUMERIC(8,6),
+    flood_share_hist_100yr NUMERIC(8,6),
+    flood_share_hist_200yr NUMERIC(8,6),
+    flood_share_hist_500yr NUMERIC(8,6),
+    flood_share_rcp85_10yr  NUMERIC(8,6),
+    flood_share_rcp85_25yr  NUMERIC(8,6),
+    flood_share_rcp85_50yr  NUMERIC(8,6),
+    flood_share_rcp85_100yr NUMERIC(8,6),
+    flood_share_rcp85_200yr NUMERIC(8,6),
+    flood_share_rcp85_500yr NUMERIC(8,6),
+    landslide_rank         SMALLINT,
+    landslide_susceptibility TEXT,
+    source                 TEXT,
+    source_level           SMALLINT,
+    data_year              INTEGER,
+    dataset_edition        TEXT NOT NULL DEFAULT 'ernakulam',
+    loaded_at              TIMESTAMPTZ NOT NULL DEFAULT now(),
+    CONSTRAINT admin_hazard_feature_natural_key UNIQUE (admin_id, dataset_edition)
+);
+CREATE INDEX admin_hazard_feature_admin_ix ON admin_hazard_feature (admin_id);
+CREATE INDEX admin_hazard_feature_flood_ix ON admin_hazard_feature (flood_share_hist_50yr);
+
+-- Accessibility derived from the real Kochi GTFS feed. feed_months_stale is
+-- carried so a conclusion can never silently rest on an expired feed.
+CREATE TABLE transit_feature (
+    id                  BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    admin_id            TEXT    NOT NULL,
+    area_km2            NUMERIC(10,3),
+    stop_count          INTEGER,
+    trips_total         INTEGER,
+    stop_density_per_km2 NUMERIC(10,3),
+    trips_per_stop      NUMERIC(10,2),
+    nearest_stop_m      NUMERIC(12,1),
+    feed_end_date       DATE,
+    feed_months_stale   INTEGER,
+    source              TEXT,
+    source_level        SMALLINT,
+    data_year           INTEGER,
+    dataset_edition     TEXT NOT NULL DEFAULT 'ernakulam',
+    loaded_at           TIMESTAMPTZ NOT NULL DEFAULT now(),
+    CONSTRAINT transit_feature_natural_key UNIQUE (admin_id, dataset_edition)
+);
+CREATE INDEX transit_feature_admin_ix ON transit_feature (admin_id);
+
+-- One row per scenario execution. run_id is the join key everything else uses,
+-- so a decision can be reconstructed from the database alone.
+CREATE TABLE scenario_run (
+    run_id            TEXT PRIMARY KEY,
+    admin_id          TEXT NOT NULL,
+    admin_name        TEXT,
+    scenario_key      TEXT NOT NULL,
+    scenario_label    TEXT,
+    budget_inr_crore  NUMERIC(14,2),
+    formula_version   TEXT NOT NULL,
+    llm_involved      BOOLEAN NOT NULL DEFAULT FALSE,
+    suitability_score NUMERIC(6,4),
+    stance            TEXT,
+    leading_domain    TEXT,
+    constraint_verdict TEXT,
+    blocking_count    INTEGER NOT NULL DEFAULT 0,
+    dataset_edition   TEXT NOT NULL DEFAULT 'ernakulam',
+    generated_at      TIMESTAMPTZ NOT NULL
+);
+CREATE INDEX scenario_run_admin_ix    ON scenario_run (admin_id);
+CREATE INDEX scenario_run_scenario_ix ON scenario_run (scenario_key);
+
+-- Every parameter as it stood for that run, with provenance. This is what makes
+-- a weight reproducible months later: the inputs are stored, not just the output.
+CREATE TABLE scenario_parameter (
+    id             BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    run_id         TEXT NOT NULL REFERENCES scenario_run(run_id) ON DELETE CASCADE,
+    parameter      TEXT NOT NULL,
+    domain         TEXT NOT NULL,
+    raw_value      NUMERIC(18,6),
+    normalized     NUMERIC(8,4),
+    confidence     NUMERIC(5,3) NOT NULL,
+    status         TEXT NOT NULL,
+    source         TEXT,
+    source_level   SMALLINT,
+    data_year      INTEGER,
+    note           TEXT,
+    CONSTRAINT scenario_parameter_key UNIQUE (run_id, parameter)
+);
+CREATE INDEX scenario_parameter_run_ix ON scenario_parameter (run_id);
+
+-- The weight audit: every term of the formula, per domain, per run.
+CREATE TABLE agent_priority (
+    id                 BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    run_id             TEXT NOT NULL REFERENCES scenario_run(run_id) ON DELETE CASCADE,
+    domain             TEXT NOT NULL,
+    scenario_relevance NUMERIC(5,3) NOT NULL,
+    relevance_term     NUMERIC(8,4) NOT NULL,
+    evidence_confidence NUMERIC(6,4) NOT NULL,
+    parameter_signal   NUMERIC(6,4) NOT NULL,
+    signal_modulator   NUMERIC(6,4) NOT NULL,
+    raw_weight         NUMERIC(10,6) NOT NULL,
+    final_weight       NUMERIC(7,4) NOT NULL,
+    rank               SMALLINT NOT NULL,
+    parameters_used    INTEGER NOT NULL DEFAULT 0,
+    parameters_skipped INTEGER NOT NULL DEFAULT 0,
+    CONSTRAINT agent_priority_key UNIQUE (run_id, domain)
+);
+
+-- Constraint outcomes. overridable_by_model is stored FALSE so the record itself
+-- carries the rule that a model may not clear a block.
+CREATE TABLE constraint_result (
+    id            BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    run_id        TEXT NOT NULL REFERENCES scenario_run(run_id) ON DELETE CASCADE,
+    code          TEXT NOT NULL,
+    severity      TEXT NOT NULL,
+    domain        TEXT NOT NULL,
+    parameter     TEXT,
+    measured_value NUMERIC(18,6),
+    threshold     NUMERIC(18,6),
+    message       TEXT NOT NULL,
+    source        TEXT,
+    source_level  SMALLINT,
+    data_year     INTEGER,
+    overridable_by_model BOOLEAN NOT NULL DEFAULT FALSE,
+    CONSTRAINT constraint_result_key UNIQUE (run_id, code)
+);
+CREATE INDEX constraint_result_severity_ix ON constraint_result (severity);
+
+CREATE TABLE decision (
+    run_id        TEXT PRIMARY KEY REFERENCES scenario_run(run_id) ON DELETE CASCADE,
+    stance        TEXT NOT NULL,
+    headline      TEXT NOT NULL,
+    conditions    JSONB NOT NULL DEFAULT '[]'::jsonb,
+    advisories    JSONB NOT NULL DEFAULT '[]'::jsonb,
+    agent_outputs JSONB,
+    decided_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE audit_event (
+    id         BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    run_id     TEXT REFERENCES scenario_run(run_id) ON DELETE CASCADE,
+    stage      TEXT NOT NULL,
+    event      TEXT NOT NULL,
+    detail     JSONB,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX audit_event_run_ix ON audit_event (run_id);
+
+
+-- ---------------------------------------------------------------------------
+-- Derived feature layers: measured values the Phase-1 tables do not carry, and
+-- the estimates allocated from published district figures.
+--
+-- Kept in one table rather than four because every column is keyed on the same
+-- thing — one local body — and because the twin reads them together. The
+-- `*_is_estimate` and `econ_population_imputed` flags travel with the values so
+-- a reader (or an agent) can never mistake an allocation for a measurement.
+-- ---------------------------------------------------------------------------
+CREATE TABLE admin_derived_feature (
+    id                        BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    admin_id                  TEXT    NOT NULL,
+
+    -- measured: OSM Southern-Zone clip
+    road_density_km_per_km2   NUMERIC(10,3),
+    max_road_class            SMALLINT,
+    row_narrow_share          NUMERIC(6,4),
+    row_arterial_km_per_km2   NUMERIC(10,3),
+    row_lane_tag_coverage     NUMERIC(6,4),
+    water_area_share          NUMERIC(8,5),
+    water_distance_m          NUMERIC(12,1),
+
+    -- measured: OSM healthcare and education facilities
+    health_count              INTEGER,
+    health_capacity           NUMERIC(10,2),
+    health_nearest_m          NUMERIC(12,1),
+    health_per_km2            NUMERIC(12,3),
+    health_per_1000           NUMERIC(12,3),
+    education_count           INTEGER,
+    education_capacity        NUMERIC(10,2),
+    education_nearest_m       NUMERIC(12,1),
+    education_per_km2         NUMERIC(12,3),
+    education_per_1000        NUMERIC(12,3),
+
+    -- measured: KMRL station list
+    nearest_metro_m           NUMERIC(12,1),
+    nearest_metro_station     TEXT,
+    metro_stations_in_unit    SMALLINT,
+
+    -- estimated: district anchors allocated down (never a measurement)
+    msme_estimated_count      NUMERIC(12,1),
+    msme_per_1000_people      NUMERIC(10,2),
+    msme_density_per_km2      NUMERIC(12,1),
+    income_per_capita_estimate NUMERIC(14,1),
+    gddp_share_estimate_crore NUMERIC(14,2),
+    employment_capacity_index NUMERIC(6,4),
+    econ_allocation           TEXT,
+    econ_population_imputed   SMALLINT NOT NULL DEFAULT 0,
+    econ_is_estimate          SMALLINT NOT NULL DEFAULT 1,
+
+    source                    TEXT,
+    source_level              SMALLINT,
+    data_year                 INTEGER,
+    dataset_edition           TEXT NOT NULL DEFAULT 'ernakulam',
+    loaded_at                 TIMESTAMPTZ NOT NULL DEFAULT now(),
+    CONSTRAINT admin_derived_feature_natural_key UNIQUE (admin_id, dataset_edition)
+);
+CREATE INDEX admin_derived_feature_admin_ix ON admin_derived_feature (admin_id);
+
+
+-- ---------------------------------------------------------------------------
+-- Implementation ledger: what someone decided to actually do.
+--
+-- Not derived data. Every row is a human commitment, so this table survives a
+-- schema reapply and is never truncated by a loader.
+--
+-- The important design point is what this table does NOT do: it never alters a
+-- measured parameter. When drainage work completes, `flood_risk` still reads
+-- what KSDMA measured, because the alternative — editing the measurement to
+-- reflect the intervention — would fabricate data and destroy the provenance
+-- the whole engine rests on. Instead the ledger is consulted alongside the
+-- measurements: the shortfall is still real, and it is now also "being
+-- addressed by X, in progress since Y". A re-measurement is the only thing
+-- that may change a measurement.
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS implementation (
+    id                BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    title             TEXT        NOT NULL,
+    domain            TEXT        NOT NULL,
+    -- The shortfall this is meant to close, by parameter name. This is the join
+    -- that stops the system re-proposing work already under way.
+    addresses         TEXT,
+    admin_ids         TEXT[]      NOT NULL,
+    est_cost_inr_crore NUMERIC(12,2),
+    status            TEXT        NOT NULL DEFAULT 'planned',
+    feasibility       TEXT,
+    conditions        JSONB       NOT NULL DEFAULT '[]'::jsonb,
+    detail            TEXT,
+    evidence          TEXT,
+    -- Where it came from: an ideation run, a reviewed proposal, or entered by hand.
+    origin            TEXT        NOT NULL DEFAULT 'manual',
+    origin_id         TEXT,
+    note              TEXT,
+    created_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
+    completed_at      TIMESTAMPTZ,
+    CONSTRAINT implementation_status_check CHECK (status IN
+        ('planned', 'in_progress', 'completed', 'on_hold', 'cancelled'))
+);
+CREATE INDEX IF NOT EXISTS implementation_status_ix ON implementation (status);
+CREATE INDEX IF NOT EXISTS implementation_addresses_ix ON implementation (addresses);
+CREATE INDEX IF NOT EXISTS implementation_admin_ix ON implementation USING GIN (admin_ids);
+
+-- Every status change, kept forever. "What is in progress" is a question about
+-- now; "when did this stall" is a question about the past, and a single
+-- mutable status column cannot answer the second one.
+CREATE TABLE IF NOT EXISTS implementation_event (
+    id                BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    implementation_id BIGINT      NOT NULL REFERENCES implementation(id) ON DELETE CASCADE,
+    from_status       TEXT,
+    to_status         TEXT        NOT NULL,
+    note              TEXT,
+    created_at        TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS implementation_event_impl_ix
+    ON implementation_event (implementation_id, created_at);

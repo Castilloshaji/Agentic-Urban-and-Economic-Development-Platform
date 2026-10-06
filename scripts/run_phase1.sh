@@ -1,9 +1,14 @@
 #!/usr/bin/env bash
 # Full Phase 1 verification: both datasets, every stage, in the guide's order.
 #
-#   bash scripts/run_phase1.sh            # demo pass, then stress pass
-#   bash scripts/run_phase1.sh demo       # one pass only
-#   bash scripts/run_phase1.sh stress
+#   bash scripts/run_phase1.sh            # real Ernakulam data (the default)
+#   bash scripts/run_phase1.sh real
+#   bash scripts/run_phase1.sh stress     # the 20-defect fixture, for Stage 2 only
+#   bash scripts/run_phase1.sh demo       # the fictional district, kept for reference
+#
+# "real" is the default because the stores are meant to hold Ernakulam. The demo
+# and stress editions exist to exercise the processing stage, not to be left
+# loaded — a demo-loaded store makes every twin query return a fictional answer.
 #
 # Exits non-zero on the first failure. Stage markers are grep-friendly (">>>").
 set -euo pipefail
@@ -23,6 +28,7 @@ if ! "$PY" -c "import psycopg2, neo4j, qdrant_client" 2>/dev/null; then
 fi
 echo "interpreter: $PY ($("$PY" -V 2>&1))"
 
+REAL_DIR=data/ernakulam/ernakulam_data
 DEMO_DIR=data/demo/demo_data
 STRESS_DIR=data/stress_test/ernakulam_phase1_stress_test_dataset/stress_test_data
 SCENARIO="Extend a feeder bus route to connect this underserved panchayat to the nearest Kochi Metro station, where part of the route corridor overlaps a KSDMA-flagged flood-hazard zone."
@@ -40,6 +46,9 @@ pass () {
   docker exec -i edt-postgres psql -U postgres -d ernakulam -q < src/storage/postgres/schema.sql 2>/dev/null
   "$PY" -m src.storage.postgres.load | tail -1
 
+  echo ">>> [$label] Step 3b — derived feature layers"
+  "$PY" -m src.storage.postgres.load_features | tail -4
+
   echo ">>> [$label] Step 4 — Neo4j"
   "$PY" -m src.storage.neo4j.load --apply-schema --reset | tail -1
   "$PY" -m src.storage.neo4j.verify | tail -1
@@ -51,14 +60,16 @@ pass () {
   "$PY" -m pytest tests/ -q 2>&1 | tail -2
 
   echo ">>> [$label] Steps 8+9 — scenario report"
-  "$PY" src/scenarios/run_scenario.py --admin-id DEMO-P-03 --scenario "$SCENARIO" 2>/dev/null | tail -2
+  "$PY" src/scenarios/run_scenario.py --admin-id G07027 --scenario "$SCENARIO" 2>/dev/null | tail -2
   echo ">>> [$label] DONE"
 }
 
-case "${1:-all}" in
+case "${1:-real}" in
+  real)   pass real "$REAL_DIR" ;;
   demo)   pass demo "$DEMO_DIR" ;;
   stress) pass stress "$STRESS_DIR" ;;
-  all)    pass demo "$DEMO_DIR"; pass stress "$STRESS_DIR" ;;
-  *) echo "usage: $0 [demo|stress|all]" >&2; exit 2 ;;
+  # Leaves the stores holding real data, which is where they should end up.
+  all)    pass stress "$STRESS_DIR"; pass real "$REAL_DIR" ;;
+  *) echo "usage: $0 [real|demo|stress|all]" >&2; exit 2 ;;
 esac
 echo ">>> ALL PASSES COMPLETE"

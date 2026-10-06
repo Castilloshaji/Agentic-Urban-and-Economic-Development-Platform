@@ -1,0 +1,98 @@
+admin_id,nearest_metro_station,nearest_metro_m,metro_in_catchment,metro_stations_in_unit,metro_source,metro_source_level,metro_data_year
+C07003,Ernakulam South,400.4,1,13,kmrl_station_list,2,2024
+G06014,Aluva,66419.7,0,0,kmrl_station_list,2,2024
+G07062,Aluva,47783.2,0,0,kmrl_station_list,2,2024
+G07014,Aluva,27924.0,0,0,kmrl_station_list,2,2024
+G07057,Aluva,42637.5,0,0,kmrl_station_list,2,2024
+G07059,Aluva,36744.2,0,0,kmrl_station_list,2,2024
+G07056,Aluva,30926.6,0,0,kmrl_station_list,2,2024
+G07063,Aluva,27308.6,0,0,kmrl_station_list,2,2024
+G07020,Aluva,25042.6,0,0,kmrl_station_list,2,2024
+G07022,Aluva,17260.5,0,0,kmrl_station_list,2,2024
+G07019,Aluva,18655.4,0,0,kmrl_station_list,2,2024
+G07017,Aluva,19596.4,0,0,kmrl_station_list,2,2024
+G10095,Aluva,11754.1,0,0,kmrl_station_list,2,2024
+G07012,Aluva,15698.3,0,0,kmrl_station_list,2,2024
+G04010,Aluva,13565.4,0,0,kmrl_station_list,2,2024
+G07010,Aluva,16823.7,0,0,kmrl_station_list,2,2024
+G07013,Aluva,16185.5,0,0,kmrl_station_list,2,2024
+G07073,Aluva,10620.2,0,0,kmrl_station_list,2,2024
+M07028,Aluva,9457.8,0,0,kmrl_station_list,2,2024
+G07072,Aluva,6499.2,0,0,kmrl_station_list,2,2024
+G07075,Aluva,6267.3,0,0,kmrl_station_list,2,2024
+G07071,Aluva,3409.2,0,0,kmrl_station_list,2,2024
+G07023,Aluva,12510.0,0,0,kmrl_station_list,2,2024
+M07024,Aluva,14064.1,0,0,kmrl_station_list,2,2024
+G07021,Aluva,18202.9,0,0,kmrl_station_list,2,2024
+G07018,Aluva,22285.8,0,0,kmrl_station_list,2,2024
+G07055,Aluva,26136.5,0,0,kmrl_station_list,2,2024
+M07023,Aluva,31000.3,0,0,kmrl_station_list,2,2024
+G07058,Aluva,31937.9,0,0,kmrl_station_list,2,2024
+G07061,Aluva,36651.8,0,0,kmrl_station_list,2,2024
+G07060,Thrippunithura Terminal,36895.9,0,0,kmrl_station_list,2,2024
+G07054,Thrippunithura Terminal,42568.1,0,0,kmrl_station_list,2,2024
+G07080,Thrippunithura Terminal,37523.3,0,0,kmrl_station_list,2,2024
+G07081,Thrippunithura Terminal,32658.7,0,0,kmrl_station_list,2,2024
+G07082,Thrippunithura Terminal,34653.4,0,0,kmrl_station_list,2,2024
+G07077,Thrippunithura Terminal,29575.1,0,0,kmrl_station_list,2,2024
+M07022,Thrippunithura Terminal,25848.6,0,0,kmrl_station_list,2,2024
+G07079,Aluva,25390.2,0,0,kmrl_station_list,2,2024
+G07084,Thrippunithura Terminal,21074.4,0,0,kmrl_station_list,2,2024
+G07051,Companypady,18805.3,0,0,kmrl_station_list,2,2024
+G07026,Ambattukavu,9121.8,0,0,kmrl_station_list,2,2024
+G07024,Aluva,12518.4,0,0,kmrl_station_list,2,2024
+G07025,Aluva,8467.0,0,0,kmrl_station_list,2,2024
+G07015,Aluva,9483.4,0,0,kmrl_station_list,2,2024
+G07029,Aluva,3792.4,0,0,kmrl_station_list,2,2024
+M07025,Aluva,604.1,1,1,kmrl_station_list,2,2024
+G07074,Aluva,8139.2,0,0,kmrl_station_list,2,2024
+G07006,Aluva,7089.6,0,0,kmrl_station_list,2,2024
+G07076,Aluva,13726.8,0,0,kmrl_station_list,2,2024
+G07001,Aluva,15551.1,0,0,kmrl_station_list,2,2024
+M07027,Aluva,13945.1,0,0,kmrl_station_list,2,2024
+G07005,Aluva,16634.1,0,0,kmrl_station_list,2,2024
+G07037,Kalamassery,18715.9,0,0,kmrl_station_list,2,2024
+G07002,Kalamassery,10672.2,0,0,kmrl_station_list,2,2024
+G07038,Cochin University,15231.6,0,0,kmrl_station_list,2,2024
+G07036,Cochin University,13349.3,0,0,kmrl_station_list,2,2024
+G07035,Edapally,10672.0,0,0,kmrl_station_list,2,2024
+G07003,Cochin University,12219.3,0,0,kmrl_station_list,2,2024
+G07008,Pulinchodu,6461.6,0,0,kmrl_station_list,2,2024
+G07009,Pulinchodu,2718.1,0,0,kmrl_station_list,2,2024
+G07034,Town Hall,9196.5,0,0,kmrl_station_list,2,2024
+G07033,M.G. Road,6596.8,0,0,kmrl_station_list,2,2024
+G07032,Town Hall,4305.9,0,0,kmrl_station_list,2,2024
+G07030,Edapally,5343.6,0,0,kmrl_station_list,2,2024
+G07031,Cochin University,3661.8,0,0,kmrl_station_list,2,2024
+G07007,Cochin University,6589.5,0,0,kmrl_station_list,2,2024
+G07004,Aluva,18782.8,0,0,kmrl_station_list,2,2024
+M07029,Kalamassery,2998.2,0,0,kmrl_station_list,2,2024
+G07027,Companypady,415.0,1,4,kmrl_station_list,2,2024
+M07026,Cochin University,3014.7,0,4,kmrl_station_list,2,2024
+M07030,Edapally,3122.0,0,0,kmrl_station_list,2,2024
+G07028,Ambattukavu,4172.9,0,0,kmrl_station_list,2,2024
+G07053,Muttom,10634.3,0,0,kmrl_station_list,2,2024
+G07050,Thrippunithura Terminal,6618.0,0,0,kmrl_station_list,2,2024
+M07031,Pettah,2456.1,0,0,kmrl_station_list,2,2024
+M07021,SN Junction,1143.7,1,3,kmrl_station_list,2,2024
+G07041,Thrippunithura Terminal,5667.3,0,0,kmrl_station_list,2,2024
+G07039,Kadavanthra,11982.9,0,0,kmrl_station_list,2,2024
+G07040,Pettah,10085.5,0,0,kmrl_station_list,2,2024
+G07042,Thrippunithura Terminal,6433.4,0,0,kmrl_station_list,2,2024
+G07044,Thrippunithura Terminal,4934.6,0,0,kmrl_station_list,2,2024
+G07043,Thrippunithura Terminal,8110.6,0,0,kmrl_station_list,2,2024
+G07046,Thrippunithura Terminal,12639.5,0,0,kmrl_station_list,2,2024
+G07045,Thrippunithura Terminal,13192.9,0,0,kmrl_station_list,2,2024
+M07066,Thrippunithura Terminal,17639.8,0,0,kmrl_station_list,2,2024
+G07047,Thrippunithura Terminal,12207.6,0,0,kmrl_station_list,2,2024
+G07049,Thrippunithura Terminal,7082.6,0,0,kmrl_station_list,2,2024
+G07048,Thrippunithura Terminal,12609.7,0,0,kmrl_station_list,2,2024
+G07052,Thrippunithura Terminal,13411.4,0,0,kmrl_station_list,2,2024
+G07070,Thrippunithura Terminal,16468.9,0,0,kmrl_station_list,2,2024
+G07069,Thrippunithura Terminal,19035.8,0,0,kmrl_station_list,2,2024
+G07066,Thrippunithura Terminal,23113.0,0,0,kmrl_station_list,2,2024
+M07067,Thrippunithura Terminal,27050.5,0,0,kmrl_station_list,2,2024
+G07068,Thrippunithura Terminal,29583.4,0,0,kmrl_station_list,2,2024
+G07078,Thrippunithura Terminal,27674.4,0,0,kmrl_station_list,2,2024
+G07083,Thrippunithura Terminal,23047.8,0,0,kmrl_station_list,2,2024
+G07064,Thrippunithura Terminal,24940.0,0,0,kmrl_station_list,2,2024

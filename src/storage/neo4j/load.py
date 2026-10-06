@@ -224,6 +224,52 @@ def fetch_postgis_geometries(dsn) -> dict[str, list[dict]]:
     return out
 
 
+# The local-body levels a point should be attributed to. Taluk and district are
+# excluded deliberately: a station sits inside all three, and the useful answer
+# to "which unit is this in" is the smallest one that governs it.
+LOCAL_BODY_LEVELS = ("panchayat", "municipality", "corporation", "ward")
+
+
+def resolve_point_admin_ids(nodes, geometries) -> int:
+    """Attribute each station and stop to the local body that contains it.
+
+    The real KMRL and GTFS sources tag every point with the district
+    (`EKM-D`), because that is the level they publish at. Taken at face value
+    that makes every panchayat look as though it has no transit at all — the
+    graph had 25 metro stations and not one of them reachable from a local
+    body.
+
+    The coordinates are real, so containment answers the question properly. The
+    value the source gave is kept as `source_admin_id` rather than overwritten
+    in place: a reader comparing the two can see that this attribution was
+    derived here and not published.
+    """
+    from shapely.geometry import Point
+
+    units = [b for b in geometries["admin_boundary"]
+             if (b["level"] or "").lower() in LOCAL_BODY_LEVELS]
+    # Smallest first, so a ward wins over the panchayat that contains it.
+    units.sort(key=lambda b: b["geom"].area)
+
+    resolved = 0
+    for label in ("MetroStation", "BusStop"):
+        for node in nodes.get(label, []):
+            point = Point(node["lon"], node["lat"])
+            node["source_admin_id"] = node.get("admin_id")
+            match = next((u for u in units
+                          if u["dataset_edition"] == node["dataset_edition"]
+                          and u["geom"].contains(point)), None)
+            if match is None:
+                # Outside every mapped local body — a point in the sea or just
+                # over the district edge. Left as the source had it.
+                node["admin_id_resolved_by"] = "unresolved: outside every local body"
+                continue
+            node["admin_id"] = match["id"]
+            node["admin_id_resolved_by"] = "point-in-polygon against admin_boundary"
+            resolved += 1
+    return resolved
+
+
 def build_overlaps(geometries) -> list[dict]:
     """FloodZone -> admin entity, wherever the two geometries actually intersect.
 
@@ -359,6 +405,11 @@ def main(argv: list[str] | None = None) -> int:
     print("\nComputing OVERLAPS from PostGIS geometries with Shapely")
     geometries = fetch_postgis_geometries(connection_string())
     overlaps = build_overlaps(geometries)
+
+    resolved = resolve_point_admin_ids(nodes, geometries)
+    points = len(nodes.get("MetroStation", [])) + len(nodes.get("BusStop", []))
+    print(f"  attributed {resolved}/{points} station(s) and stop(s) to a local body "
+          f"by point-in-polygon")
     print(f"  {len(geometries['flood_zone'])} flood zone(s) x "
           f"{len(geometries['admin_boundary'])} boundary(ies) -> {len(overlaps)} intersection(s)")
 

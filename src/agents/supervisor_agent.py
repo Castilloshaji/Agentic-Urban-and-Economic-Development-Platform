@@ -15,7 +15,8 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 
 from ..rag.retrieve import retrieve
-from . import economic_agent, environment_agent, infrastructure_agent, transportation_agent
+from . import (budget_agent, economic_agent, education_agent, environment_agent,
+               healthcare_agent, infrastructure_agent, transportation_agent)
 from .llm import Backend, complete_json, resolve_backend
 
 DOMAIN_AGENTS = {
@@ -23,6 +24,9 @@ DOMAIN_AGENTS = {
     "infrastructure": infrastructure_agent,
     "transportation": transportation_agent,
     "environment": environment_agent,
+    "healthcare": healthcare_agent,
+    "education": education_agent,
+    "budget": budget_agent,
 }
 
 BUDGET_QUERY = "budget allocation capital expenditure funding line item"
